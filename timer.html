@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        .progress{
+            position: relative;
+            margin: 4px;
+            float:left;
+            text-align: center;
+        }
+        .barOverflow{ /* Wraps the rotating .bar */
+            position: relative;
+            overflow: hidden; /* Comment this line to understand the trick */
+            width: 90px; height: 45px; /* Half circle (overflow) */
+            margin-bottom: -14px; /* bring the numbers up */
+        }
+        .bar{
+            position: absolute;
+            top: 0; left: 0;
+            width: 90px; height: 90px; /* full circle! */
+            border-radius: 50%;
+            box-sizing: border-box;
+            border: 5px solid #eee;     /* half gray, */
+            border-bottom-color: #0bf;  /* half azure */
+            border-right-color: #0bf;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress">
+        <div class="barOverflow">
+          <div class="bar"></div>
+        </div>
+        <span>30</span>
+    </div>
+
+    <!-- <audio controls>
+        <source src="your-audio-file.wav" type="audio/wav">
+        Your browser does not support the audio element.
+    </audio> -->
+      <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+      <script>
+        // $(".progress").each(function () {
+        //     var $bar = $(this).find(".bar");
+        //     var $val = $(this).find("span");
+        //     var totalTime = parseInt($val.text(), 10); // Get time from <span> and convert to integer
+
+        //     $({ p: 0 }).animate({ p: 100 }, {
+        //         duration: totalTime * 1000, // Convert seconds to milliseconds
+        //         easing: "linear", // Smooth linear animation
+        //         step: function (p) {
+        //             $bar.css({
+        //                 transform: "rotate(" + (45 + (p * 1.8)) + "deg)" // Rotation based on progress
+        //             });
+        //             $val.text(Math.ceil((totalTime * (100 - p)) / 100) + "s"); // Countdown display
+        //         }
+        //     });
+        // });
+        $(".progress").each(function () {
+            var $bar = $(this).find(".bar");
+            var $val = $(this).find("span");
+            var totalTime = parseInt($val.text(), 10); // Get the countdown time from span
+
+            $({ p: 100 }).animate({ p: 0 }, { // Reverse from 100% to 0%
+                duration: totalTime * 1000, // Convert seconds to milliseconds
+                easing: "linear", 
+                step: function (p) {
+                    // Reverse rotation as well
+                    $bar.css({
+                        transform: "rotate(" + (45 + (p * 1.8)) + "deg)",
+                        
+                    });
+                    $val.text(Math.ceil((totalTime * p) / 100) + "s"); // Countdown
+                }
+            });
+        });
+
+
+      </script>
+</body>
+</html>

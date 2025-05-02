@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Grid Editor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f8f8f8;
+            margin-bottom: 10px;
+        }
+
+        .toolbar select, .toolbar button, .toolbar input {
+            padding: 5px 10px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .text-options {
+            display: flex;
+            gap: 5px;
+        }
+
+        .container {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .column {
+            border: 1px solid #ccc;
+            min-height: 200px;
+            padding: 10px;
+            background: white;
+            position: relative;
+        }
+
+        .editor-section {
+            min-height: 150px;
+            padding: 10px;
+            outline: none;
+            border: 1px solid #ddd;
+        }
+
+        .upload-area {
+            border: 2px dashed #007BFF;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            display: none;
+            position: relative;
+        }
+
+        .image-preview img {
+            max-width: 100px;
+            height: auto;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin: 5px;
+        }
+
+        .active-button {
+            background-color: #007BFF;
+            color: white;
+        }
+        .file-input{
+            width: 100%;
+            display: inline-block;
+            position: absolute;
+            display: flex;
+            top: 0;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div>
+            <label for="column-count">Choose Columns:</label>
+            <select id="column-count">
+                <option value="1">1 Column</option>
+                <option value="2">2 Columns</option>
+                <option value="3">3 Columns</option>
+            </select>
+        </div>
+
+        <div class="text-options">
+            <button onclick="formatText('bold', this)">B</button>
+            <button onclick="formatText('italic', this)">I</button>
+            <button onclick="formatText('underline', this)">U</button>
+            <select onchange="setFontSize(this.value)">
+                <option value="">Size</option>
+                <option value="12px">12px</option>
+                <option value="16px">16px</option>
+                <option value="20px">20px</option>
+                <option value="24px">24px</option>
+            </select>
+            <input type="color" onchange="setColor(this.value)">
+            <select onchange="setFontFamily(this.value)">
+                <option value="">Font</option>
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="container" id="editor-container"></div>
+
+    <script>
+        let activeEditor = null;
+
+        $(document).ready(function () {
+            function createColumns(count) {
+                let container = $("#editor-container");
+                container.empty();
+                container.css("grid-template-columns", `repeat(${count}, 1fr)`);
+
+                for (let i = 1; i <= count; i++) {
+                    let column = $(
+                        `<div class="column" id="column-${i}">
+                            <div class="column-controls">
+                                <label for="column-type-${i}">Select:</label>
+                                <select class="column-type" data-column="${i}">
+                                    <option value="text">Text</option>
+                                    <option value="image">Image</option>
+                                </select>
+                            </div>
+
+                            <div class="editor-section" contenteditable="true" id="editor-${i}">Type here...</div>
+                            
+                            <div class="upload-area" id="upload-${i}">
+                                Drag & Drop Image Here
+                                <input type="file" class="file-input" data-column="${i}" accept="image/*">
+                                <div class="image-preview" id="preview-${i}"></div>
+                            </div>
+                        </div>`
+                    );
+                    container.append(column);
+                }
+            }
+
+            $("#column-count").change(function () {
+                createColumns($(this).val());
+            });
+
+            createColumns(1);
+
+            $(document).on("change", ".column-type", function () {
+                let columnNumber = $(this).data("column");
+                let selectedType = $(this).val();
+                
+                if (selectedType === "text") {
+                    $(`#editor-${columnNumber}`).show();
+                    $(`#upload-${columnNumber}`).hide();
+                } else {
+                    $(`#editor-${columnNumber}`).hide();
+                    $(`#upload-${columnNumber}`).show();
+                }
+            });
+
+            $(document).on("click", ".editor-section", function () {
+                activeEditor = this;
+            });
+
+            $(document).on("click", ".upload-area", function () {
+                $(this).find(".file-input").click();
+            });
+
+            $(document).on("change", ".file-input", function (event) {
+                let columnNumber = $(this).data("column");
+                let previewDiv = $(`#preview-${columnNumber}`);
+                let files = event.target.files;
+
+                previewDiv.empty();
+                for (let file of files) {
+                    if (file.type.startsWith("image/")) {
+                        let reader = new FileReader();
+                        reader.onload = function (e) {
+                            let img = $(`<img src="${e.target.result}">`);
+                            previewDiv.append(img);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            });
+        });
+
+        function formatText(command, button) {
+            if (activeEditor) {
+                document.execCommand(command, false, null);
+                $(button).toggleClass("active-button");
+            }
+        }
+
+        function setFontSize(size) {
+            if (activeEditor) {
+                document.execCommand("fontSize", false, 7);
+                $("font[size='7']").removeAttr("size").css("font-size", size);
+            }
+        }
+
+        function setColor(color) {
+            if (activeEditor) {
+                document.execCommand("foreColor", false, color);
+            }
+        }
+
+        function setFontFamily(font) {
+            if (activeEditor) {
+                document.execCommand("fontName", false, font);
+            }
+        }
+    </script>
+</body>
+</html>
